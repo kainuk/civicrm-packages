@@ -1963,10 +1963,6 @@ class Contact_Vcard_Build extends PEAR
 //              $lines[$key] = trim(preg_replace("/$regex/i", "\\1$newline ", $val));
 //          }
 //      }
-
-        // recode the lines from UTF-8 to lowest covering charset
-        $lines = $this->charsetRecode($lines);
-
         // compile the array of lines into a single text block
         // and return (with a trailing newline)
         return implode($newline, $lines). $newline;

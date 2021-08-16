@@ -1963,6 +1963,10 @@ class Contact_Vcard_Build extends PEAR
 //              $lines[$key] = trim(preg_replace("/$regex/i", "\\1$newline ", $val));
 //          }
 //      }
+
+        // recode the lines from UTF-8 to lowest covering charset
+        $lines = $this->charsetRecode($lines);
+
         // compile the array of lines into a single text block
         // and return (with a trailing newline)
         return implode($newline, $lines). $newline;
@@ -2041,49 +2045,13 @@ class Contact_Vcard_Build extends PEAR
      * @return array  the recoded and properly tagged lines
      */
     function charsetRecode($lines) {
-
-        $charsets = array('US-ASCII', 'ISO-8859-1', 'CP1250');
-
-        if ((function_exists('iconv_strlen') or function_exists('mb_strlen')) and function_exists('iconv')) {
-
-            // for each line, get the character length of the UTF-8 string
-            // and try to recode it to every charset in turn; iconv() returns
-            // truncated strings on recode errors, so if the character length
-            // after the recode equals the one before - we've found a valid
-            // charset
-            foreach ($lines as $number => $line) {
-                $lineCharset = 'UTF-8';
-                if (function_exists('iconv_strlen')) {
-                    $strlen = iconv_strlen($line, 'UTF-8');
-                } else {
-                    $strlen = mb_strlen($line, 'UTF-8');
-                }
-                foreach ($charsets as $charset) {
-                    $iconvd = iconv('UTF-8', $charset, $line);
-                    if (strlen($iconvd) == $strlen) {
-                        $lineCharset = $charset;
-                        $line = $iconvd;
-                        break;
-                    }
-                }
-                // tag the non-US-ASCII-only, recoded lines properly
-                if ($lineCharset != 'US-ASCII') {
-                    $lines[$number] = preg_replace('/:/', ";ENCODING=8BIT;CHARSET=$lineCharset:", $line, 1);
-                }
-            }
-
-        } else {
-
-            // if there's no mb_strings or iconv support,
-            // simply tag the non-US-ASCII-only lines as UTF-8
-            foreach ($lines as $number => $line) {
-                if (preg_match('/[^\x00-\x7f]/', $line)) {
+        // if there's no mb_strings or iconv support,
+        // simply tag the non-US-ASCII-only lines as UTF-8
+        foreach ($lines as $number => $line) {
+            if (preg_match('/[^\x00-\x7f]/', $line)) {
                     $lines[$number] = preg_replace('/:/', ";ENCODING=8BIT;CHARSET=UTF-8:", $line, 1);
-                }
             }
-
         }
-
         return $lines;
     }
 
